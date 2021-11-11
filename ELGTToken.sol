@@ -138,15 +138,6 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     function queryFreezeAmount(address account) public view returns(uint256) {
         uint256 lastFreezeBlock = _freeze_datas[account].lastFreezeBlock;
         uint256 startFreezeBlock = _freeze_datas[account].startBlock;
-        /*if(uint256(_roles[account]) == uint256(RoleType.SEED) || uint256(_roles[account]) == uint256(RoleType.PRIVATE)) {
-            if(seedPause){
-                return 0;
-            }
-            if(seedMeltStartBlock != 0 && seedMeltStartBlock > lastFreezeBlock) {
-                lastFreezeBlock = seedMeltStartBlock;
-            }
-            startFreezeBlock = seedMeltStartBlock;
-        }*/
         if(_roles[account] == RoleType.INVALID){
             return 0;
         }
@@ -154,6 +145,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         uint256 balance = _frozen_balanceOf(account);
         if(amount > balance) {
             amount = balance;
+        }
+        if(uint256(_roles[account]) == uint256(RoleType.PRESALE) && !_unusual[account].released) {
+           amount = amount + _unusual[account].releaseAmount; 
         }
         return amount;
     }
@@ -309,14 +303,12 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         //Rules.Rule storage rule = _rules[uint256(_roles[msg.sender])];
         uint256 lastFreezeBlock = _freeze_datas[msg.sender].lastFreezeBlock;
         uint256 startFreezeBlock = _freeze_datas[msg.sender].startBlock;
-        /*if(uint256(_roles[msg.sender]) == uint256(RoleType.SEED) || uint256(_roles[msg.sender]) == uint256(RoleType.PRIVATE) ) {
-            require(!seedPause, "seed pause is true, can't to claim");
-            if(seedMeltStartBlock != 0 && seedMeltStartBlock > lastFreezeBlock) {
-                lastFreezeBlock = seedMeltStartBlock;
-            }
-            startFreezeBlock = seedMeltStartBlock;
-        }*/
         uint256 amount = _rules[uint256(_roles[msg.sender])].freezeAmount(_freeze_datas[msg.sender].frozenAmount, startFreezeBlock, lastFreezeBlock, block.number);
+        if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE) && !_unusual[msg.sender].released) ) {
+            amount = amount + _unusual[msg.sender].releaseAmount;
+            _unusual[msg.sender].released = true;
+        }
+
         require(amount > 0, "Melt amount must be greater than 0");
         // border amount
         if(amount > _frozen_balanceOf(msg.sender)) {
@@ -346,12 +338,13 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         if(_role == RoleType.FUNDER_AIRPORT || _role == RoleType.PRIVATESALE) {
             startBn = startBn + sixMonthIntervalBlock;
         }
-        uint256 balance30 = amount * 30 / 100;
+        uint256 balance30 = 0;
         if(_role == RoleType.PRESALE){ // 3MONTH 3%
-            _unusual[account] = Unusual(startBn, balance30, true);
-            amount = amount - balance30;
+            balance30 = amount * 30 / 100;
+            _unusual[account] = Unusual(startBn, balance30, false);
+            //amount = amount - balance30;
         }
-        _freeze_datas[account] = FreezeData(true, amount, startBn, startBn);
+        _freeze_datas[account] = FreezeData(true, amount - balance30, startBn, startBn);
         _mintfrozen(account, amount);
         return true;
     }
