@@ -28,9 +28,16 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         uint256 lastFreezeBlock;
     }
 
+    struct Unusual {
+        uint256 releaseBn;
+        uint256 releaseAmount;
+        bool    released;
+    }
+
     mapping (address => RoleType) private _roles;
     mapping (uint256 => Rules.Rule) private _rules;
     mapping (address => FreezeData) private _freeze_datas;
+    mapping (address => Unusual) private _unusual;
     uint256 public monthIntervalBlock = 172800;    // 172800 (30d*24h*60m*60s/15s)
     uint256 public yearIntervalBlock = 2102400;    // 2102400 (365d*24h*60m*60s/15s)
     uint256 public sixMonthIntervalBlock = 1036800; // six month block: 1036800 (6m*30d*24h*60m*60s/15s)
@@ -112,7 +119,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _rules[uint256(RoleType.FUNDER)].setRule(monthIntervalBlock, 137, 16000000 * 10 ** 18); 
         _rules[uint256(RoleType.ACTIVE)].setRule(monthIntervalBlock, 266, 7500000 * 10 ** 18); 
         _rules[uint256(RoleType.ADVISORS)].setRule(monthIntervalBlock, 420, 5000000 * 10 ** 18);  
-        _rules[uint256(RoleType.PRESALE)].setRule(monthIntervalBlock, 833, 4960000 * 10 ** 18); 
+        _rules[uint256(RoleType.PRESALE)].setRule(monthIntervalBlock, 833, 3600000 * 10 ** 18); 
         _rules[uint256(RoleType.PRIVATESALE)].setRule(monthIntervalBlock, 833, 5040000 * 10 ** 18; 
     }
 
@@ -338,6 +345,11 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         }
         if(_role == RoleType.FUNDER_AIRPORT || _role == RoleType.PRIVATESALE) {
             startBn = startBn + sixMonthIntervalBlock;
+        }
+        uint256 balance30 = amount * 30 / 100;
+        if(_role == RoleType.PRESALE){ // 3MONTH 3%
+            _unusual[account] = Unusual(startBn, balance30, true);
+            amount = amount - balance30;
         }
         _freeze_datas[account] = FreezeData(true, amount, startBn, startBn);
         _mintfrozen(account, amount);

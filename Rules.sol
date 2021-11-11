@@ -33,6 +33,7 @@ library Rules {
         require(currentBlock >= lastFreezeBlock, "currentBlock < lastFreezeBlock");
         require(baseAmount > 0, "baseAmount cant not be 0");
         require(rule.percent > 0, "rule.percent should more than 0");
+        
         uint256 actualFactor =  currentBlock.sub(startFrozenBlock).div(rule.intervalFreezeBlock);
         uint256 alreadyFactor = lastFreezeBlock.sub(startFrozenBlock).div(rule.intervalFreezeBlock);
         require(actualFactor >= alreadyFactor, "invalid factor");
