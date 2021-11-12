@@ -1861,8 +1861,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     uint256 constant public maxCallFrequency = 100;
     uint256 public totalSupplyLimit;
 
-    // 游戏奖励、生态奖励、基金会、流动性、合作顾问、PreSale PublicSale
-    enum RoleType { INVALID, GAME, COMMUNITY, FUNDER_AIRPORT, FUNDER, ACTIVE, ADVISORS, PRESALE, PRIVATESALE, PUBLICSALE }
+    enum RoleType { INVALID, GAME, COMMUNITY, AIRDROP, FOUNDATION, LIQUID1, LIQUID2, ADVISORS, PRESALE1, PRESALE2, PUBLICSALE }
 
     struct FreezeData {
         bool initialzed;
@@ -1884,9 +1883,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     uint256 public monthIntervalBlock = 172800;    // 172800 (30d*24h*60m*60s/15s)
     uint256 public yearIntervalBlock = 2102400;    // 2102400 (365d*24h*60m*60s/15s)
     uint256 public sixMonthIntervalBlock = 1036800; // six month block: 1036800 (6m*30d*24h*60m*60s/15s)
-
-    bool public seedPause = true;
-    uint256 public seedMeltStartBlock = 0;       
+    
     bool public ruleReady;
 
     // upgrade part
@@ -1900,14 +1897,11 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     modifier canClaim() {
         require(uint256(_roles[msg.sender]) != uint256(RoleType.INVALID), "Invalid user role");
         require(_freeze_datas[msg.sender].initialzed);
-        /*if(_roles[msg.sender] == RoleType.SEED){
-            require(!seedPause, "Seed is not time to unlock yet");
-        }*/
         _;
     }
 
     modifier canMint(uint256 _amount) {
-        require((totalSupply() + _amount) <= totalSupplyLimit, "Mint: Exceed the maximum circulation");
+        require(totalSupply().add(_amount) <= totalSupplyLimit, "Mint: Exceed the maximum circulation");
         _;
     }
 
@@ -1923,7 +1917,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         for (uint256 i = 0; i < _amounts.length; i++) {
             mintAmount = mintAmount.add(_amounts[i]);
         }
-        require((totalSupply() + mintAmount) <= totalSupplyLimit, "BatchMint: Exceed the maximum circulation");
+        require(totalSupply().add(mintAmount) <= totalSupplyLimit, "BatchMint: Exceed the maximum circulation");
         _;
     }
 
@@ -1949,21 +1943,22 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
 
     constructor (string memory _name, string memory _symbol) ERC20(_name, _symbol) ERC20Permit(_name) {
         totalSupplyLimit = 100_000_000 * 10 ** 18;
-        //_mint(msg.sender, 1_000_000 * 10 ** 18;
     }
 
     function readyRule() onlyOwner public {
         require(!ruleReady, "only init once");
         ruleReady = true;
-        // GAME, COMMUNITY, FUNDER_AIRPORT, FUNDER, ACTIVE, ADVISORS, PRESALE, PRIVATESALE, PUBLICSALE
-        _rules[uint256(RoleType.GAME)].setRule(monthIntervalBlock, 138, 31000000 * 10 ** 18);   // 31000000
+        // GAME, COMMUNITY, FOUNDATION, AIRDROP, LIQUID, LIQUID2, ADVISORS, PRESALE1, PRESALE2, PUBLICSALE
+        _rules[uint256(RoleType.GAME)].setRule(monthIntervalBlock, 139, 31000000 * 10 ** 18);   // 31000000
         _rules[uint256(RoleType.COMMUNITY)].setRule(monthIntervalBlock, 139, 23000000 * 10 ** 18);     
-        _rules[uint256(RoleType.FUNDER_AIRPORT)].setRule(monthIntervalBlock, 830, 1000000 * 10 ** 18); 
-        _rules[uint256(RoleType.FUNDER)].setRule(monthIntervalBlock, 137, 16000000 * 10 ** 18); 
-        _rules[uint256(RoleType.ACTIVE)].setRule(monthIntervalBlock, 266, 7500000 * 10 ** 18); 
-        _rules[uint256(RoleType.ADVISORS)].setRule(monthIntervalBlock, 420, 5000000 * 10 ** 18);  
-        _rules[uint256(RoleType.PRESALE)].setRule(monthIntervalBlock, 833, 4960000 * 10 ** 18); 
-        _rules[uint256(RoleType.PRIVATESALE)].setRule(monthIntervalBlock, 833, 5040000 * 10 ** 18); 
+        _rules[uint256(RoleType.AIRDROP)].setRule(monthIntervalBlock, 834, 1000000 * 10 ** 18); 
+        _rules[uint256(RoleType.FOUNDATION)].setRule(monthIntervalBlock, 139, 16000000 * 10 ** 18); 
+        _rules[uint256(RoleType.LIQUID1)].setRule(monthIntervalBlock, 278, 7500000 * 10 ** 18); 
+        _rules[uint256(RoleType.LIQUID2)].setRule(1, 10000, 5500000 * 10 ** 18); 
+        _rules[uint256(RoleType.ADVISORS)].setRule(monthIntervalBlock, 417, 5000000 * 10 ** 18);  
+        _rules[uint256(RoleType.PRESALE1)].setRule(monthIntervalBlock, 834, 5000000 * 10 ** 18); 
+        _rules[uint256(RoleType.PRESALE2)].setRule(monthIntervalBlock, 834, 5000000 * 10 ** 18); 
+        _rules[uint256(RoleType.PUBLICSALE)].setRule(1, 10000, 1000000 * 10 ** 18); 
     }
 
     function roleType(address account) public view returns (uint256) {
@@ -1990,9 +1985,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
             amount = balance;
         }
         
-        if(uint256(_roles[account]) == uint256(RoleType.PRESALE) && !_unusual[account].released) {
-            if(block.number <= startFreezeBlock && (block.number - startFreezeBlock >= monthIntervalBlock * 3)) {
-               amount = amount + _unusual[account].releaseAmount; 
+        if(uint256(_roles[account]) == uint256(RoleType.PRESALE1) && !_unusual[account].released) {
+            if(block.number >= _unusual[account].releaseBn) {
+                amount = amount + _unusual[account].releaseAmount; 
             }
         }
         return amount;
@@ -2023,7 +2018,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         return true;
     }
 
-    function transferFrozenToken(address to, uint256 amount) public returns (bool) {
+    /*function transferFrozenToken(address to, uint256 amount) public returns (bool) {
         _transferFrozen(msg.sender, to, amount);
         return true;
     }
@@ -2035,15 +2030,15 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
             _transferFrozen(msg.sender, accounts[i], amounts[i]);
         }
         return true;
-    }
+    }*/
 
-    function meltTokens(address account, uint256 amount) public onlyOwner returns (bool) {
+    /*function meltTokens(address account, uint256 amount) public onlyOwner returns (bool) {
         _melt(account, amount);
         emit Transfer(address(this), account, amount);
         return true;
-    }
+    }*/
     
-    function meltBatchTokens(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner returns (bool) {
+    /*function meltBatchTokens(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner returns (bool) {
         require(accounts.length > 0, "meltBatchTokens: transfer should be to at least one address");
         require(accounts.length == amounts.length, "meltBatchTokens: accounts.length != amounts.length");
         for (uint256 i = 0; i < accounts.length; i++) {
@@ -2051,9 +2046,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
             emit Transfer(address(this), accounts[i], amounts[i]);
         }
         return true;
-    }
+    }*/
 
-    function mint(address account, uint256 amount) public onlyOwner canMint(amount) returns (bool) {
+    /*function mint(address account, uint256 amount) public onlyOwner canMint(amount) returns (bool) {
         _mint(account, amount);
         return true;
     }
@@ -2066,14 +2061,14 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         }
 
         return true;
-    }
+    }*/
 
-    function mintFrozenTokens(address account, uint256 amount) public onlyOwner canMint(amount) returns (bool) {
+    /*function mintFrozenTokens(address account, uint256 amount) public onlyOwner canMint(amount) returns (bool) {
         _mintfrozen(account, amount);
         return true;
-    }
+    }*/
 
-    function mintBatchFrozenTokens(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner canBatchMint(amounts) returns (bool) {
+    /*function mintBatchFrozenTokens(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner canBatchMint(amounts) returns (bool) {
         require(accounts.length > 0, "mintBatchFrozenTokens: transfer should be to at least one address");
         require(accounts.length == amounts.length, "mintBatchFrozenTokens: recipients.length != amounts.length");
         for (uint256 i = 0; i < accounts.length; i++) {
@@ -2081,7 +2076,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         }
 
         return true;
-    }
+    }*/
 
     function mintFrozenTokensForRole(address account, uint256 amount, RoleType _role) public onlyOwner onlyReady canMint(amount) roleCanMint(uint256(_role), amount) returns (bool) {
         _mintFrozenTokensForRole(account, amount, _role);
@@ -2117,6 +2112,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     }
 
     function withdraw(address _token, address payable _recipient) public onlyOwner {
+        require(_recipient != address(0x0));
         if (_token == address(0x0)) {
             require(_recipient != address(0x0));
             // transfer eth
@@ -2150,9 +2146,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         uint256 lastFreezeBlock = _freeze_datas[msg.sender].lastFreezeBlock;
         uint256 startFreezeBlock = _freeze_datas[msg.sender].startBlock;
         uint256 amount = _rules[uint256(_roles[msg.sender])].freezeAmount(_freeze_datas[msg.sender].frozenAmount, startFreezeBlock, lastFreezeBlock, block.number);
-        if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE) && !_unusual[msg.sender].released) {
-            if(block.number <= startFreezeBlock && (block.number - startFreezeBlock >= monthIntervalBlock * 3)) {
-                amount = amount + _unusual[msg.sender].releaseAmount;
+        if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE1) && !_unusual[msg.sender].released) {
+            if(block.number >= _unusual[msg.sender].releaseBn) {
+                amount = amount.add(_unusual[msg.sender].releaseAmount);
                 _unusual[msg.sender].released = true;
             }
         }
@@ -2170,10 +2166,10 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         return true;
     }
 
-    function startSeedPause() onlyOwner public {
+    /*function startSeedPause() onlyOwner public {
         seedPause = false;
         seedMeltStartBlock = block.number;
-    }
+    }*/
 
     function _mintFrozenTokensForRole(address account, uint256 amount, RoleType _role) internal returns (bool) {
         require(!_freeze_datas[account].initialzed, "specified account already initialzed");
@@ -2183,23 +2179,25 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         if(_role == RoleType.ADVISORS) {
             startBn = startBn + monthIntervalBlock * 3;
         }
-        if(_role == RoleType.PRESALE) {
+        /*if(_role == RoleType.PRESALE1) {
             startBn = startBn + monthIntervalBlock * 4;
-        }
-        if(_role == RoleType.FUNDER_AIRPORT || _role == RoleType.PRIVATESALE) {
+        }*/
+        if(_role == RoleType.AIRDROP || _role == RoleType.PRESALE2) {
             startBn = startBn + sixMonthIntervalBlock;
         }
         uint256 balance30 = 0;
-        if(_role == RoleType.PRESALE){ // 3MONTH 3%
+        if(_role == RoleType.PRESALE1){ // 3MONTH 3%
+            startBn = startBn + monthIntervalBlock * 3;
             balance30 = amount * 30 / 100;
             _unusual[account] = Unusual(startBn, balance30, false);
+            startBn = startBn + monthIntervalBlock;
         }
         _freeze_datas[account] = FreezeData(true, amount - balance30, startBn, startBn);
         _mintfrozen(account, amount);
         return true;
     }
 
-    function _transferFrozen(address sender, address to, uint256 amount) internal {
+    /*function _transferFrozen(address sender, address to, uint256 amount) internal {
         require(to != address(0), "ERC20-Frozen: transfer from the zero address");
         require(amount != 0, "ERC20-Frozen: transfer amount is zero");
         require(uint256(_roles[sender]) == uint256(RoleType.COMMUNITY), "ERC20-Frozen: msg.sender is not belong to community");
@@ -2209,9 +2207,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
 
         emit FrozenTransfer(msg.sender, to, amount);
         emit Transfer(msg.sender, to, amount);
-    }
+    }*/
 
-    function _freeze(address account, uint256 amount) internal {
+    /*function _freeze(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: freeze from the zero address");
         require(amount > 0, "ERC20: freeze from the address: amount should be > 0");
     
@@ -2219,7 +2217,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _frozen_add(account, amount);
 
         emit Freeze(account, amount);
-    }
+    }*/
 
     function _mintfrozen(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: mint frozen to the zero address");
@@ -2247,14 +2245,14 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         emit Melt(account, amount);
     }
 
-    function _burnFrozen(address account, uint256 amount) internal {
+    /*function _burnFrozen(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: frozen burn from the zero address");
 
         _totalSupply_sub(amount);
         _frozen_sub(account, amount);
 
         emit Transfer(account, address(this), amount);
-    }
+    }*/
 
     // The following functions are overrides required by Solidity.
 
