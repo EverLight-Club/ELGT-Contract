@@ -120,7 +120,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _rules[uint256(RoleType.ACTIVE)].setRule(monthIntervalBlock, 266, 7500000 * 10 ** 18); 
         _rules[uint256(RoleType.ADVISORS)].setRule(monthIntervalBlock, 420, 5000000 * 10 ** 18);  
         _rules[uint256(RoleType.PRESALE)].setRule(monthIntervalBlock, 833, 3600000 * 10 ** 18); 
-        _rules[uint256(RoleType.PRIVATESALE)].setRule(monthIntervalBlock, 833, 5040000 * 10 ** 18; 
+        _rules[uint256(RoleType.PRIVATESALE)].setRule(monthIntervalBlock, 833, 5040000 * 10 ** 18); 
     }
 
     function roleType(address account) public view returns (uint256) {
@@ -304,7 +304,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         uint256 lastFreezeBlock = _freeze_datas[msg.sender].lastFreezeBlock;
         uint256 startFreezeBlock = _freeze_datas[msg.sender].startBlock;
         uint256 amount = _rules[uint256(_roles[msg.sender])].freezeAmount(_freeze_datas[msg.sender].frozenAmount, startFreezeBlock, lastFreezeBlock, block.number);
-        if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE) && !_unusual[msg.sender].released) ) {
+        if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE) && !_unusual[msg.sender].released) {
             amount = amount + _unusual[msg.sender].releaseAmount;
             _unusual[msg.sender].released = true;
         }
