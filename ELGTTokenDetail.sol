@@ -149,15 +149,6 @@ contract AccountFrozenBalances {
     }
 }
 
-interface IERC20Token {
-
-    function balanceOf(address _owner) external view returns (uint256 balance);
-    function transfer(address _to, uint256 _value) external returns (bool success);
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
-    function approve(address _spender, uint256 _value) external returns (bool success);
-    function allowance(address _owner, address _spender) external view returns (uint256 remaining);
-}
-
 /**
  * @dev Wrappers over Solidity's uintXX/intXX casting operators with added overflow
  * checks.
@@ -1957,7 +1948,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     event Upgrade(address indexed from, uint256 _value);
 
     constructor (string memory _name, string memory _symbol) ERC20(_name, _symbol) ERC20Permit(_name) {
-        totalSupplyLimit = 21_000_000 * 10 ** 18;
+        totalSupplyLimit = 100_000_000 * 10 ** 18;
         //_mint(msg.sender, 1_000_000 * 10 ** 18;
     }
 
@@ -2009,7 +2000,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     }
 
     function balanceOf(address account) public view override returns (uint256) {
-        return balanceOf(account).add(_frozen_balanceOf(account));
+        return super.balanceOf(account).add(_frozen_balanceOf(account));
     }
 
     function roleRemainAmount(uint256 _role) public view returns(uint256) {
@@ -2131,7 +2122,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
             return;
         }
 
-        IERC20Token token = IERC20Token(_token);
+        IERC20 token = IERC20(_token);
         uint balance = token.balanceOf(address(this));
         // transfer token
         token.transfer(_recipient, balance);
