@@ -1962,7 +1962,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _rules[uint256(RoleType.FUNDER)].setRule(monthIntervalBlock, 137, 16000000 * 10 ** 18); 
         _rules[uint256(RoleType.ACTIVE)].setRule(monthIntervalBlock, 266, 7500000 * 10 ** 18); 
         _rules[uint256(RoleType.ADVISORS)].setRule(monthIntervalBlock, 420, 5000000 * 10 ** 18);  
-        _rules[uint256(RoleType.PRESALE)].setRule(monthIntervalBlock, 833, 3600000 * 10 ** 18); 
+        _rules[uint256(RoleType.PRESALE)].setRule(monthIntervalBlock, 833, 4960000 * 10 ** 18); 
         _rules[uint256(RoleType.PRIVATESALE)].setRule(monthIntervalBlock, 833, 5040000 * 10 ** 18); 
     }
 
@@ -1989,8 +1989,11 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         if(amount > balance) {
             amount = balance;
         }
+        
         if(uint256(_roles[account]) == uint256(RoleType.PRESALE) && !_unusual[account].released) {
-           amount = amount + _unusual[account].releaseAmount; 
+            if(block.number <= startFreezeBlock && (block.number - startFreezeBlock >= monthIntervalBlock * 3)) {
+               amount = amount + _unusual[account].releaseAmount; 
+            }
         }
         return amount;
     }
@@ -2148,8 +2151,10 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         uint256 startFreezeBlock = _freeze_datas[msg.sender].startBlock;
         uint256 amount = _rules[uint256(_roles[msg.sender])].freezeAmount(_freeze_datas[msg.sender].frozenAmount, startFreezeBlock, lastFreezeBlock, block.number);
         if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE) && !_unusual[msg.sender].released) {
-            amount = amount + _unusual[msg.sender].releaseAmount;
-            _unusual[msg.sender].released = true;
+            if(block.number <= startFreezeBlock && (block.number - startFreezeBlock >= monthIntervalBlock * 3)) {
+                amount = amount + _unusual[msg.sender].releaseAmount;
+                _unusual[msg.sender].released = true;
+            }
         }
 
         require(amount > 0, "Melt amount must be greater than 0");
@@ -2175,8 +2180,11 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         // set role type
         _roles[account] = _role;
         uint256 startBn = block.number;
-        if(_role == RoleType.ADVISORS || _role == RoleType.PRESALE) {
+        if(_role == RoleType.ADVISORS) {
             startBn = startBn + monthIntervalBlock * 3;
+        }
+        if(_role == RoleType.PRESALE) {
+            startBn = startBn + monthIntervalBlock * 4;
         }
         if(_role == RoleType.FUNDER_AIRPORT || _role == RoleType.PRIVATESALE) {
             startBn = startBn + sixMonthIntervalBlock;
@@ -2185,7 +2193,6 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         if(_role == RoleType.PRESALE){ // 3MONTH 3%
             balance30 = amount * 30 / 100;
             _unusual[account] = Unusual(startBn, balance30, false);
-            //amount = amount - balance30;
         }
         _freeze_datas[account] = FreezeData(true, amount - balance30, startBn, startBn);
         _mintfrozen(account, amount);
@@ -2263,7 +2270,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         override(ERC20, ERC20Votes)
     {
         super._mint(to, amount);
-        require(totalSupply() < totalSupplyLimit, "ELGTToken: total supply risks overflowing max");
+        require(totalSupply() <= totalSupplyLimit, "ELGTToken: total supply risks overflowing max");
     }
 
     function _burn(address account, uint256 amount)
