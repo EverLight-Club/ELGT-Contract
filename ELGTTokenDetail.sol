@@ -2113,10 +2113,11 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     function withdraw(address _token, address payable _recipient) public onlyOwner {
         require(_recipient != address(0x0));
         if (_token == address(0x0)) {
-            require(_recipient != address(0x0));
             // transfer eth
-            _recipient.transfer(address(this).balance);
-            emit Withdrawal(_recipient, address(this).balance);
+            uint256 _balance = address(this).balance;
+            _recipient.transfer(_balance);
+            
+            emit Withdrawal(_recipient, _balance);
             return;
         }
 
