@@ -1849,10 +1849,6 @@ abstract contract ERC20Burnable is Context, ERC20 {
 pragma solidity ^0.8.2;
 
 
-
-
-
-
 contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC20Permit, ERC20Votes {
 
     using SafeMath for uint256;
@@ -2017,66 +2013,6 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         return true;
     }
 
-    /*function transferFrozenToken(address to, uint256 amount) public returns (bool) {
-        _transferFrozen(msg.sender, to, amount);
-        return true;
-    }
-
-    function transferBatchFrozenTokens(address[] calldata accounts, uint256[] calldata amounts) external returns (bool) {
-        require(accounts.length > 0, "transferBatchFrozenTokens: transfer should be to at least one address");
-        require(accounts.length == amounts.length, "transferBatchFrozenTokens: recipients.length != amounts.length");
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _transferFrozen(msg.sender, accounts[i], amounts[i]);
-        }
-        return true;
-    }*/
-
-    /*function meltTokens(address account, uint256 amount) public onlyOwner returns (bool) {
-        _melt(account, amount);
-        emit Transfer(address(this), account, amount);
-        return true;
-    }*/
-    
-    /*function meltBatchTokens(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner returns (bool) {
-        require(accounts.length > 0, "meltBatchTokens: transfer should be to at least one address");
-        require(accounts.length == amounts.length, "meltBatchTokens: accounts.length != amounts.length");
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _melt(accounts[i], amounts[i]);
-            emit Transfer(address(this), accounts[i], amounts[i]);
-        }
-        return true;
-    }*/
-
-    /*function mint(address account, uint256 amount) public onlyOwner canMint(amount) returns (bool) {
-        _mint(account, amount);
-        return true;
-    }
-
-    function mintBatchToken(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner canBatchMint(amounts) returns (bool) {
-        require(accounts.length > 0, "mintBatchToken: transfer should be to at least one address");
-        require(accounts.length == amounts.length, "mintBatchToken: recipients.length != amounts.length");
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _mint(accounts[i], amounts[i]);
-        }
-
-        return true;
-    }*/
-
-    /*function mintFrozenTokens(address account, uint256 amount) public onlyOwner canMint(amount) returns (bool) {
-        _mintfrozen(account, amount);
-        return true;
-    }*/
-
-    /*function mintBatchFrozenTokens(address[] calldata accounts, uint256[] calldata amounts) external onlyOwner canBatchMint(amounts) returns (bool) {
-        require(accounts.length > 0, "mintBatchFrozenTokens: transfer should be to at least one address");
-        require(accounts.length == amounts.length, "mintBatchFrozenTokens: recipients.length != amounts.length");
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _mintfrozen(accounts[i], amounts[i]);
-        }
-
-        return true;
-    }*/
-
     function mintFrozenTokensForRole(address account, uint256 amount, RoleType _role) public onlyOwner onlyReady canMint(amount) roleCanMint(uint256(_role), amount) returns (bool) {
         _mintFrozenTokensForRole(account, amount, _role);
         return true;
@@ -2091,9 +2027,8 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         return true;
     }
 
-    // @dev burn erc20 token and exchange mainnet token.
     function upgrade(uint256 amount) public {
-        require(amount != 0, "DSGT: upgradable amount should be more than 0");
+        require(amount != 0, "ELGT: upgradable amount should be more than 0");
         address holder = msg.sender;
 
         // Burn tokens to be upgraded
@@ -2166,11 +2101,6 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         return true;
     }
 
-    /*function startSeedPause() onlyOwner public {
-        seedPause = false;
-        seedMeltStartBlock = block.number;
-    }*/
-
     function _mintFrozenTokensForRole(address account, uint256 amount, RoleType _role) internal returns (bool) {
         require(!_freeze_datas[account].initialzed, "specified account already initialzed");
         // set role type
@@ -2183,7 +2113,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
             startBn = startBn + sixMonthIntervalBlock;
         }
         uint256 balance30 = 0;
-        if(_role == RoleType.PRESALE1){ // 3MONTH 3%
+        if(_role == RoleType.PRESALE1){ 
             startBn = startBn + monthIntervalBlock * 3;
             balance30 = amount * 30 / 100;
             _unusual[account] = Unusual(startBn, balance30, false);
@@ -2193,28 +2123,6 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _mintfrozen(account, amount);
         return true;
     }
-
-    /*function _transferFrozen(address sender, address to, uint256 amount) internal {
-        require(to != address(0), "ERC20-Frozen: transfer from the zero address");
-        require(amount != 0, "ERC20-Frozen: transfer amount is zero");
-        require(uint256(_roles[sender]) == uint256(RoleType.COMMUNITY), "ERC20-Frozen: msg.sender is not belong to community");
-        require(_frozen_balanceOf(sender) >= amount, "frozen amount should greater than amount");
-        _frozen_sub(sender, amount);
-        _frozen_add(to, amount);
-
-        emit FrozenTransfer(msg.sender, to, amount);
-        emit Transfer(msg.sender, to, amount);
-    }*/
-
-    /*function _freeze(address account, uint256 amount) internal {
-        require(account != address(0), "ERC20: freeze from the zero address");
-        require(amount > 0, "ERC20: freeze from the address: amount should be > 0");
-    
-        _balance_sub(account, amount);
-        _frozen_add(account, amount);
-
-        emit Freeze(account, amount);
-    }*/
 
     function _mintfrozen(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: mint frozen to the zero address");
@@ -2241,15 +2149,6 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
 
         emit Melt(account, amount);
     }
-
-    /*function _burnFrozen(address account, uint256 amount) internal {
-        require(account != address(0), "ERC20: frozen burn from the zero address");
-
-        _totalSupply_sub(amount);
-        _frozen_sub(account, amount);
-
-        emit Transfer(account, address(this), amount);
-    }*/
 
     // The following functions are overrides required by Solidity.
 
