@@ -1885,6 +1885,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     // upgrade part
     uint256 private _totalUpgraded;    
 
+    bool    public freezeStart = false;
+    uint256 public freezeStartBlock = 0;
+
     modifier onlyReady(){
         require(ruleReady, "ruleReady is false");
         _;
@@ -1957,6 +1960,11 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _rules[uint256(RoleType.PUBLICSALE)].setRule(1, 10000, 1000000 * 10 ** 18); 
     }
 
+    function startMelt(bool _switch) public onlyOwner {
+        freezeStart = _switch;
+        freezeStartBlock = block.number;
+    }
+
     function roleType(address account) public view returns (uint256) {
         return uint256(_roles[account]);
     }
@@ -1970,12 +1978,20 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     }
 
     function queryFreezeAmount(address account) public view returns(uint256) {
+        if(!freezeStart){
+            return 0;
+        }
         uint256 lastFreezeBlock = _freeze_datas[account].lastFreezeBlock;
-        uint256 startFreezeBlock = _freeze_datas[account].startBlock;
+        uint256 startFreezeBlock = freezeStartBlock;
+        //uint256 startFreezeBlock = _freeze_datas[account].startBlock;
+        if(startFreezeBlock > lastFreezeBlock) {
+            lastFreezeBlock = startFreezeBlock;
+        }
+
         if(_roles[account] == RoleType.INVALID){
             return 0;
         }
-        uint256 amount = _rules[uint256(_roles[account])].freezeAmount(_freeze_datas[account].frozenAmount , startFreezeBlock, lastFreezeBlock, block.number);
+        uint256 amount = _rules[uint256(_roles[account])].freezeAmount(_freeze_datas[account].frozenAmount , freezeStartBlock, lastFreezeBlock, block.number);
         uint256 balance = _frozen_balanceOf(account);
         if(uint256(_roles[account]) == uint256(RoleType.PRESALE1) && !_unusual[account].released) {
             if(block.number >= _unusual[account].releaseBn) {
@@ -2077,9 +2093,16 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     }
 
     function claimTokens() public canClaim returns (bool) {
+        require(freezeStart, "freezeStart off");
+        
         //Rules.Rule storage rule = _rules[uint256(_roles[msg.sender])];
         uint256 lastFreezeBlock = _freeze_datas[msg.sender].lastFreezeBlock;
-        uint256 startFreezeBlock = _freeze_datas[msg.sender].startBlock;
+        //uint256 startFreezeBlock = _freeze_datas[msg.sender].startBlock;
+        uint256 startFreezeBlock = freezeStartBlock;
+        if(startFreezeBlock > lastFreezeBlock) {
+            lastFreezeBlock = startFreezeBlock;
+        }
+        
         uint256 amount = _rules[uint256(_roles[msg.sender])].freezeAmount(_freeze_datas[msg.sender].frozenAmount, startFreezeBlock, lastFreezeBlock, block.number);
         if(uint256(_roles[msg.sender]) == uint256(RoleType.PRESALE1) && !_unusual[msg.sender].released) {
             if(block.number >= _unusual[msg.sender].releaseBn) {
