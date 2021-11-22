@@ -1991,7 +1991,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         if(_roles[account] == RoleType.INVALID){
             return 0;
         }
-        uint256 amount = _rules[uint256(_roles[account])].freezeAmount(_freeze_datas[account].frozenAmount , freezeStartBlock, lastFreezeBlock, block.number);
+        uint256 amount = _rules[uint256(_roles[account])].freezeAmount(_freeze_datas[account].frozenAmount , startFreezeBlock, lastFreezeBlock, block.number);
         uint256 balance = _frozen_balanceOf(account);
         if(uint256(_roles[account]) == uint256(RoleType.PRESALE1) && !_unusual[account].released) {
             if(block.number >= _unusual[account].releaseBn) {
