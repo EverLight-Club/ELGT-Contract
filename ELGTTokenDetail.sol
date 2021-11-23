@@ -1876,9 +1876,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     mapping (uint256 => Rules.Rule) private _rules;
     mapping (address => FreezeData) private _freeze_datas;
     mapping (address => Unusual) private _unusual;
-    uint256 public monthIntervalBlock = 172800;    // 172800 (30d*24h*60m*60s/15s)
-    uint256 public yearIntervalBlock = 2102400;    // 2102400 (365d*24h*60m*60s/15s)
-    uint256 public sixMonthIntervalBlock = 1036800; // six month block: 1036800 (6m*30d*24h*60m*60s/15s)
+    uint256 public monthIntervalBlock = 864_000;    // 864000 (30d*24h*60m*60s/3s)
+    uint256 public yearIntervalBlock = 10_512_000;    // 10,512,000 (365d*24h*60m*60s/3s)
+    uint256 public sixMonthIntervalBlock = 5_184_000; // 5,184,000 six month block: 1036800 (6m*30d*24h*60m*60s/3s)
     
     bool public ruleReady;
 
@@ -1886,7 +1886,7 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     uint256 private _totalUpgraded;    
 
     bool    public freezeStart = false;
-    uint256 public freezeStartBlock = 0;
+    uint256 private freezeStartBlock = 0;
 
     modifier onlyReady(){
         require(ruleReady, "ruleReady is false");
