@@ -1960,9 +1960,13 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
         _rules[uint256(RoleType.PUBLICSALE)].setRule(1, 10000, 1000000 * 10 ** 18); 
     }
 
-    function startMelt(bool _switch) public onlyOwner {
+    function startFreeze(bool _switch) public onlyOwner {
         freezeStart = _switch;
         freezeStartBlock = block.number;
+    }
+
+    function queryStartBlock() public view returns (uint256) {
+        return freezeStartBlock;
     }
 
     function roleType(address account) public view returns (uint256) {
