@@ -38,9 +38,9 @@ contract ELGTToken is AccountFrozenBalances, ERC20, ERC20Burnable, Ownable, ERC2
     mapping (uint256 => Rules.Rule) private _rules;
     mapping (address => FreezeData) private _freeze_datas;
     mapping (address => Unusual) private _unusual;
-    uint256 public monthIntervalBlock = 172800;    // 172800 (30d*24h*60m*60s/15s)
-    uint256 public yearIntervalBlock = 2102400;    // 2102400 (365d*24h*60m*60s/15s)
-    uint256 public sixMonthIntervalBlock = 1036800; // six month block: 1036800 (6m*30d*24h*60m*60s/15s)
+    uint256 public monthIntervalBlock = 864000;    // 864000 (30d*24h*60m*60s/3s)
+    uint256 public yearIntervalBlock = 10512000;    // 10512000 (365d*24h*60m*60s/3s)
+    uint256 public sixMonthIntervalBlock = 5184000; // six month block: 5184000 (6m*30d*24h*60m*60s/3s)
 
     bool public seedPause = true;
     uint256 public seedMeltStartBlock = 0;       
